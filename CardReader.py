@@ -1,84 +1,72 @@
-TOKEN_END_POINT = "https://login.microsoftonline.com/common/oauth2/token"
-CLIENT_ID = "371758be-f5a9-4798-b405-1a10be9fa453"
-RESOURCE_URL = "https://graph.microsoft.com"
-API_BASE_URL = "https://graph.microsoft.com/beta"
-USERNAME = "rgregg@odspdevelopers.com"
-PASSWORD = "RRWPDuGI5MpH"
-LIST_PATH = "/sites/1drvplat-ppe/lists/scan%20log"
-
 run = True
 
 import requests
 import signal
-import json
+import jsonstruct
 import datetime
 
-class AccessToken:
-    access_token = ""
-    expires = datetime.datetime.utcnow()
+import AppConfig
+import AccessToken
+import ListItem
 
-    def expired(cls):
-        if not cls.access_token:
-            return True
-        safe_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
-        if safe_date > cls.expires:
-            return True
-        return False
+last_token = AccessToken.AccessToken()
+config = AppConfig.AppConfig.read_from_file()
 
-last_token = AccessToken()
-
-def get_access_token(tokenEndPoint, resourceUrl, clientId, username, password):
-    r = requests.post(tokenEndPoint, data = {
-        "resource": resourceUrl,
-        "client_id": clientId,
-        "grant_type": "password",
-        "username": username,
-        "password": password,
-        "scope": "openid"
-        },
-        verify = False)
-    r.raise_for_status()
-    
-    val = AccessToken()
-    json = r.json()
-    val.access_token = json["access_token"]
-    val.expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=int(json["expires_in"]))
-    return val
-
-def end_read(signal, frame):
-    global run
-    print("\nCtrl+C captured, ending card reading mode.")
-    run = False
-
-def refresh_access_token():
-    global last_token
-    if last_token.expired():
-        print "Refreshing access_token..."
-        last_token = get_access_token(TOKEN_END_POINT, RESOURCE_URL, CLIENT_ID, USERNAME, PASSWORD)
-        if last_token.expired():
-            print "Unable to generate a new access token. Scan cancelled."
-            return False
-        else:
-            print "New access token: %s" % last_token.access_token
-    return True
+# Allow overriding the access_token for debugging purposes
+if config.access_token:
+    last_token.access_token = config.access_token
+    last_token.expires = datetime.datetime.max
 
 def record_card_scan(card_number):
-    if refresh_access_token():
-        # Record the card back to SharePoint
-        url = API_BASE_URL + "/sharepoint:" + LIST_PATH + ":/items"
-        headers = { "Authorization": "Bearer " + last_token.access_token,
-                    "Content-Type": "application/json" }
-        data = { }
-        
-        try:
-            r = requests.post(url, json = data, headers = headers, verify=False)
-            r.raise_for_status()
-            return True
-        except requests.HTTPError as err:
-            print "Error making HTTP request: %s" % err.message
-            
+    
+    # Make sure we have a fresh access token that works
+    try:
+        last_token.refresh_token(config)
+    except Exception as err:
+        print "Unable to refresh access token. %s" % err.message
 
-    return False
+    item = create_list_item()
+    if item:
+        item.columnSet = {
+            "Card_x0020_Unique_x0020_ID": card_number,
+            "Entry_x0020_Time": datetime.datetime.utcnow().isoformat(),
+            "Title": "Badge Scanned"
+        }
+        update_columns(item)
+    else:
+        print "Unable to create a new item in the list."
+
+def create_list_item():
+    url = config.api_base_url + "/sharepoint:" + config.list_relative_path + ":/items"
+    headers = { "Authorization": "Bearer " + last_token.access_token,
+                "Content-Type": "application/json" }
+    data = "{}"
+    
+    try:
+        r = requests.post(url, data=data, headers=headers, verify=config.verify_ssl)
+        r.raise_for_status()
+        return jsonstruct.decode(r.text, ListItem.ListItem)
+    except requests.HTTPError as err:
+        print "HTTP error creating a new item: %s" % err.message
+    except Exception as err:
+        print "Error occured while creating an item %s" % err.message 
+    return None
+
+def update_columns(item):
+    url = config.api_base_url + "/sharepoint:" + config.list_relative_path + ":/items/" + item.id + "/columnSet"
+    headers = { "Authorization": "Bearer " + last_token.access_token,
+                "Content-Type": "application/json" }
+    data = jsonstruct.encode(item.columnSet)
+    
+    try:
+        r = requests.patch(url, data=data, headers=headers, verify=config.verify_ssl)
+        r.raise_for_status()
+        return jsonstruct.decode(r.text, ListItem)
+    except requests.HTTPError as err:
+        print "HTTP error creating a new item: %s" % err.message
+    except Exception as err:
+        print "Error occured while creating an item %s" % err.message 
+    return None
 
 def main():
     global run
@@ -86,21 +74,22 @@ def main():
     # Setup for Ctrl-C capture
     signal.signal(signal.SIGINT, end_read)
     
-    
     while run:
 
         # Try to read the card, if present
-        card_number = raw_input("Enter a card number: ")
+        card_number = "0316140010808056" # raw_input("Enter a card number: ")
         if card_number:
             print "Card %s detected." % card_number
-            result = record_card_scan(card_number)
-            if result:
-                print "Scan recorded."
-            else:
-                print "Failed to record scan."
+            record_card_scan(card_number)
         else:
             print "No card number detected. Aborting."
             run = False
+
+def end_read(signal, frame):
+    global run
+    print("\nCtrl+C captured, ending card reading mode.")
+    run = False
+
 main()
 
 
