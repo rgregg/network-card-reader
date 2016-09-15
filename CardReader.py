@@ -90,7 +90,7 @@ def main():
     while run:
 
         # Try to read the card, if present
-        card_number = "123" #raw_input("Enter a card number: ")
+        card_number = raw_input("Enter a card number: ")
         if card_number:
             print "Card %s detected." % card_number
             result = record_card_scan(card_number)
