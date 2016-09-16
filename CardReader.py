@@ -1,5 +1,3 @@
-run = True
-
 import requests
 import signal
 import jsonstruct
@@ -9,15 +7,7 @@ import AppConfig
 import AccessToken
 import ListItem
 
-last_token = AccessToken.AccessToken()
-config = AppConfig.AppConfig.read_from_file()
-
-# Allow overriding the access_token for debugging purposes
-if config.access_token:
-    last_token.access_token = config.access_token
-    last_token.expires = datetime.datetime.max
-
-def record_card_scan(card_number):
+def record_card_scan(card_number, last_token):
     
     # Make sure we have a fresh access token that works
     try:
@@ -36,7 +26,7 @@ def record_card_scan(card_number):
     else:
         print "Unable to create a new item in the list."
 
-def create_list_item():
+def create_list_item(last_token):
     url = config.api_base_url + "/sharepoint:" + config.list_relative_path + ":/items"
     headers = { "Authorization": "Bearer " + last_token.access_token,
                 "Content-Type": "application/json" }
@@ -52,7 +42,7 @@ def create_list_item():
         print "Error occured while creating an item %s" % err.message 
     return None
 
-def update_columns(item):
+def update_columns(item, last_token):
     url = config.api_base_url + "/sharepoint:" + config.list_relative_path + ":/items/" + item.id + "/columnSet"
     headers = { "Authorization": "Bearer " + last_token.access_token,
                 "Content-Type": "application/json" }
@@ -69,7 +59,14 @@ def update_columns(item):
     return None
 
 def main():
-    global run
+    last_token = AccessToken.AccessToken()
+    # Allow overriding the access_token for debugging purposes
+    if config.access_token:
+        last_token.access_token = config.access_token
+        last_token.expires = datetime.datetime.max
+    
+    config = AppConfig.AppConfig.read_from_file()
+    run = True
 
     # Setup for Ctrl-C capture
     signal.signal(signal.SIGINT, end_read)
@@ -80,7 +77,7 @@ def main():
         card_number = "0316140010808056" # raw_input("Enter a card number: ")
         if card_number:
             print "Card %s detected." % card_number
-            record_card_scan(card_number)
+            record_card_scan(card_number, last_token)
         else:
             print "No card number detected. Aborting."
             run = False
@@ -90,6 +87,7 @@ def end_read(signal, frame):
     print("\nCtrl+C captured, ending card reading mode.")
     run = False
 
-main()
+if __name__ == '__main__':
+    main()
 
 

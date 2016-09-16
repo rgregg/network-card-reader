@@ -3,9 +3,11 @@ import requests
 import AppConfig
 
 class AccessToken:
-    access_token = ""
-    expires = datetime.datetime.utcnow()
-    app_config = None
+    
+    def __init__(self):
+        self.access_token = ""
+        self.expires = datetime.datetime.utcnow()
+        self.app_config = None
 
     def expired(cls):
         if not cls.access_token:

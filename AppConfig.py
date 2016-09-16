@@ -7,7 +7,7 @@ class AppConfig:
     api_base_url = "https://graph.microsoft.com/beta"
     resource_url = "https://graph.microsoft.com"
     list_relative_path = ""
-    username = "",
+    username = ""
     password = ""
     verify_ssl = False
     access_token = ""
