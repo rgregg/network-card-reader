@@ -94,7 +94,7 @@ class AppConfig:
     def read_from_file(named = 'config.json'):
         try:
             with open(named) as data_file:
-                data = json.loads(data_file)
+                data = json.load(data_file)
                 return AppConfig(data)
         except Exception as err:
             print 'Unable to parse config.json: %s' % err.message

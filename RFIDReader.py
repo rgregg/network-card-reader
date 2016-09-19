@@ -40,8 +40,8 @@ class RfidCardReader:
     def get_device(self):
         devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
         target_device = None
-        for device in devices
-            device.name == self.device_name:
+        for device in devices:
+            if device.name == self.device_name:
                 return device
 
         print 'Unable to locate named device %s' % self.device_name
@@ -63,7 +63,7 @@ class RfidCardReader:
         self.input_device = input_device
 
     def close_input_device(self):
-        if self.input_device
+        if self.input_device:
             self.input_device.ungrab()
             self.input_device = None
 

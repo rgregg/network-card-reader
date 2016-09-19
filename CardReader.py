@@ -36,8 +36,8 @@ class CardReader:
         self.config = AppConfig.AppConfig.read_from_file()
 
         # Allow overriding the access_token for debugging purposes
-        if config.access_token:
-            self.last_token.access_token = config.access_token
+        if self.config.access_token:
+            self.last_token.access_token = self.config.access_token
             self.last_token.expires = datetime.datetime.max
 
 
@@ -110,17 +110,19 @@ class CardReader:
                 run = False
         
 reader = CardReader()
-if __name__ == '__main__':
-    # Setup for Ctrl-C capture
-    signal.signal(signal.SIGINT, self.end_read)
-
-    # Run the main run loop
-    reader.run()
 
 def end_read(signal, frame):
     if signal == signal.SIGINT:
         print '\nCtrl+C captured, aborting.'
         reader.cancel()
+
+if __name__ == '__main__':
+    # Setup for Ctrl-C capture
+    signal.signal(signal.SIGINT, end_read)
+
+    # Run the main run loop
+    reader.run()
+
     
 
 
