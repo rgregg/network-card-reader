@@ -24,7 +24,7 @@ import json
 
 class AppConfig:
 
-    def __init__(self, prop_dict={})
+    def __init__(self, prop_dict={}):
         self._prop_dict = prop_dict
 
     @property
@@ -73,7 +73,7 @@ class AppConfig:
     def password(self):
         if "password" in self._prop_dict:
             return self._prop_dict["password"]
-        else
+        else:
             return None
     
     @property
