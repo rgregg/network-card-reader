@@ -1,11 +1,32 @@
+'''
+------------------------------------------------------------------------------
+ Copyright (c) 2016 Microsoft Corporation
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+------------------------------------------------------------------------------
+'''
+
 import requests
 import signal
-import jsonstruct
 import datetime
+import json
 
 import AppConfig
 import AccessToken
-import ListItem
+import Models
 import RFIDReader
 
 class CardReader:
@@ -47,7 +68,7 @@ class CardReader:
         try:
             r = requests.post(url, data=data, headers=headers, verify=config.verify_ssl)
             r.raise_for_status()
-            return jsonstruct.decode(r.text, ListItem.ListItem)
+            return Models.ListItem(r.json())
         except requests.HTTPError as err:
             print 'HTTP error creating a new item: %s' % err.message
         except Exception as err:
@@ -58,12 +79,10 @@ class CardReader:
         url = self.config.api_base_url + '/sharepoint:' + self.config.list_relative_path + ':/items/' + item.id + '/columnSet'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token,
                     'Content-Type': 'application/json' }
-        data = jsonstruct.encode(item.columnSet)
-        
         try:
-            r = requests.patch(url, data=data, headers=headers, verify=config.verify_ssl)
+            r = requests.patch(url, json=item.column_set, headers=headers, verify=config.verify_ssl)
             r.raise_for_status()
-            return jsonstruct.decode(r.text, ListItem)
+            return Models.ListItem(r.json())
         except requests.HTTPError as err:
             print 'HTTP error creating a new item: %s' % err.message
         except Exception as err:
@@ -99,7 +118,7 @@ if __name__ == '__main__':
     reader.run()
 
 def end_read(signal, frame):
-    if (signal == signal.SIGINT)
+    if signal == signal.SIGINT:
         print '\nCtrl+C captured, aborting.'
         reader.cancel()
     

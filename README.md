@@ -16,9 +16,6 @@ Depending on your python configuration, you may need to install additional modul
 The following wheels/eggs must be installed:
 
 * requests
-* adal
-* cryptography
-* jsonstruct
 
 To install these, use `pip install <wheel_name>`.
 
@@ -36,3 +33,6 @@ Before you can use the sample, you need to configure an application within your 
 
 After registering your application, copy the details of the app into a copy of **config.template.json** and name the file **config.json**.
 
+## License
+
+See [License](LICENSE.md) for details.

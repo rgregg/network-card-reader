@@ -1,5 +1,26 @@
+'''
+------------------------------------------------------------------------------
+ Copyright (c) 2016 Microsoft Corporation
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+------------------------------------------------------------------------------
+'''
+
 import sys
-import evdev # import InputDevice, list_devices, categorize, ecodes
+import evdev
 
 class RfidCardReader:
     KEY_ENTER = 'KEY_ENTER'
@@ -16,7 +37,7 @@ class RfidCardReader:
     def __init__(self):
         self.device_name = 'Sycreader USB Reader'
 
-    def get_scanner_device(self):
+    def get_device(self):
         devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
         target_device = None
         for device in devices
@@ -27,7 +48,7 @@ class RfidCardReader:
         return None        
 
     def open_input_device(self):
-        device = self.get_scanner_device()
+        device = self.get_device()
         if not device:
             print 'Device not found'
             sys.exit(1)

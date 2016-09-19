@@ -1,11 +1,11 @@
 {
-"auth_authority_url": "https://login.microsoftonline.com/common",
-"client_id": "",
-"redirect_url": "https://localhost:44399",
-"api_base_url": "https://graph.microsoft.com/beta",
-"resource_url": "https://graph.microsoft.com",
-"list_relative_path": "/sites/scanner%20app/scan%20log",
+"authAuthorityUrl": "https://login.microsoftonline.com/common",
+"clientId": "",
+"redirectUrl": "",
+"apiBaseUrl": "https://graph.microsoft.com/beta",
+"resourceUri": "https://graph.microsoft.com",
+"listRelativePath": "/sites/access/lists/scan%20log",
 "username": "",
 "password": "",
-"verify_ssl": true
+"verifySSL": true
 }
