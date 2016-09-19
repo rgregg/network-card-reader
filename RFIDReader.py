@@ -87,8 +87,8 @@ class RfidCardReader:
         for event in self.input_device.read_loop():
             data = evdev.categorize(event)
             if event.type == evdev.ecodes.EV_KEY and data.keystate == data.key_down:
-                if data.keycode == KEY_ENTER:
+                if data.keycode == RfidCardReader.KEY_ENTER:
                     break
-                rfid += SCANCODES[data.scancode]
+                rfid += RfidCardReader.SCANCODES[data.scancode]
         return rfid   
     

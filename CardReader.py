@@ -92,15 +92,19 @@ class CardReader:
     def cancel(self):
         self.run = False
         self.reader.close_input_device()
+        print 'Card reader shutdown.'
 
     def main(self):
         self.reader = RFIDReader.RfidCardReader()
         self.reader.open_input_device()
 
+        print 'Card reader initialized. Waiting for card.'
+
         while self.run:
             # Try to read the card, if present
             # card_number = raw_input('Enter a card number: ')
             card_number = self.reader.read_input() 
+            print 'Detected card number: %s' % card_number
 
             if card_number:
                 print 'Card %s detected.' % card_number
@@ -111,8 +115,8 @@ class CardReader:
         
 reader = CardReader()
 
-def end_read(signal, frame):
-    if signal == signal.SIGINT:
+def end_read(sig, frame):
+    if sig == signal.SIGINT:
         print '\nCtrl+C captured, aborting.'
         reader.cancel()
 
