@@ -44,7 +44,7 @@ class CardReader:
     def record_card_scan(self, card_number):
         # Make sure we have a fresh access token that works
         try:
-            self.last_token.refresh_token(config)
+            self.last_token.refresh_token(self.config)
         except Exception as err:
             print 'Unable to refresh access token. %s' % err.message
 
@@ -66,7 +66,7 @@ class CardReader:
         data = '{}'
         
         try:
-            r = requests.post(url, data=data, headers=headers, verify=config.verify_ssl)
+            r = requests.post(url, data=data, headers=headers, verify=self.config.verify_ssl)
             r.raise_for_status()
             return Models.ListItem(r.json())
         except requests.HTTPError as err:
@@ -104,7 +104,7 @@ class CardReader:
 
             if card_number:
                 print 'Card %s detected.' % card_number
-                record_card_scan(card_number, last_token)
+                self.record_card_scan(card_number)
             else:
                 print 'No card number detected. Aborting.'
                 run = False

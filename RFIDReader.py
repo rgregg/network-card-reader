@@ -80,7 +80,8 @@ class RfidCardReader:
 
     def read_input(self):
         if not USE_EVDEV:
-            return raw_input('Missing evdev, enter card number directly: ')
+            return '1234'
+            #return raw_input('Missing evdev, enter card number directly: ')
             
         rfid = ''
         for event in self.input_device.read_loop():
