@@ -93,7 +93,7 @@ class CardReader:
         self.run = False
         self.reader.close_input_device()
 
-    def run(self):
+    def main(self):
         self.reader = RFIDReader.RfidCardReader()
         self.reader.open_input_device()
 
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, end_read)
 
     # Run the main run loop
-    reader.run()
+    reader.main()
 
     
 

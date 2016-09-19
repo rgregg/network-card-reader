@@ -20,7 +20,12 @@
 '''
 
 import sys
-import evdev
+
+try:
+    import evdev
+    USE_EVDEV = True
+except ImportError:
+    USE_EVDEV = False
 
 class RfidCardReader:
     KEY_ENTER = 'KEY_ENTER'
@@ -38,6 +43,9 @@ class RfidCardReader:
         self.device_name = 'Sycreader USB Reader'
 
     def get_device(self):
+        if not USE_EVDEV:
+            return
+
         devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
         target_device = None
         for device in devices:
@@ -48,6 +56,9 @@ class RfidCardReader:
         return None        
 
     def open_input_device(self):
+        if not USE_EVDEV:
+            return
+
         device = self.get_device()
         if not device:
             print 'Device not found'
@@ -68,6 +79,9 @@ class RfidCardReader:
             self.input_device = None
 
     def read_input(self):
+        if not USE_EVDEV:
+            return raw_input('Missing evdev, enter card number directly: ')
+            
         rfid = ''
         for event in self.input_device.read_loop():
             data = evdev.categorize(event)
