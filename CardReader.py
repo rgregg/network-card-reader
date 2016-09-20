@@ -34,11 +34,61 @@ class CardReader:
         self.run = True
         self.last_token = AccessToken.AccessToken()
         self.config = AppConfig.AppConfig.read_from_file()
+        self.card_serials = {}
 
         # Allow overriding the access_token for debugging purposes
         if self.config.access_token:
             self.last_token.access_token = self.config.access_token
             self.last_token.expires = datetime.datetime.max
+
+    def refresh_card_list(self):
+        # Refresh the valid card numbers from the server
+        try:
+            self.last_token.refresh_token(self.config)
+        except Exception as err:
+            print 'Unable to refresh access token. %s' % err.message
+        
+        # /sharepoint:/path:/items?$select=id&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)
+        url = self.config.api_base_url + '/sharepoint:' + self.config.access_cards_path + ":/items?$select=id&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)"
+        headers = { 'Authorization': 'Bearer ' + self.last_token.access_token }
+
+        try:
+            r = requests.get(url, headers=headers, verify=self.config.verify_ssl)
+            r.raise_for_status()
+
+            self.card_serials = self.parse_card_list(r.json())
+
+        except Exception as err:
+            print 'Unable to retrieve valid access cards. %s' % err.message
+
+    def parse_card_list(self, dict):
+        if not 'value' in dict:
+            raise ValueException('No values element in dict')
+
+        output = {}
+        values = dict['value']
+        for item in values:
+            try:
+                if not 'columnSet' in item:
+                    continue
+                column_set = item['columnSet']
+                employee_id = column_set['EmployeeId']
+                card_serial = None
+                if 'Card_x0020_Serial' in column_set:
+                    card_serial = column_set['Card_x0020_Serial']
+                elif 'Card_x005f_x0020_x005f_Serial' in column_set:
+                    card_serial = column_set['Card_x005f_x0020_x005f_Serial']
+                output[card_serial] = employee_id
+            except Excetion as err:
+                print 'Unable to parse response item: %s' % err.message
+        
+        return output
+    
+    def lookup_card_id(self, card_number):
+        card_id = None
+        if card_number in self.card_serials:
+            card_id = self.card_serials[card_number]
+        return card_id
 
 
     def record_card_scan(self, card_number):
@@ -47,20 +97,27 @@ class CardReader:
             self.last_token.refresh_token(self.config)
         except Exception as err:
             print 'Unable to refresh access token. %s' % err.message
+        
+        # Look up the CardSerialId value from the list of valid cards
+        card_id = self.lookup_card_id(card_number)
+        if not card_id:
+            print 'Invalid card scanned. Access denied.'
+            return
 
         item = self.create_list_item()
         if item:
-            item.columnSet = {
-                'Card_x0020_Unique_x0020_ID': card_number,
+            item.column_set = {
+                
                 'Entry_x0020_Time': datetime.datetime.utcnow().isoformat(),
-                'Title': 'Badge Scanned'
+                'Title': 'Scanned at Reader 01'
             }
+            # 'Card_x0020_SerialId': card_id,
             self.update_columns(item)
         else:
             print 'Unable to create a new item in the list.'
 
     def create_list_item(self):
-        url = self.config.api_base_url + '/sharepoint:' + self.config.list_relative_path + ':/items'
+        url = self.config.api_base_url + '/sharepoint:' + self.config.entry_log_path + ':/items'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token,
                     'Content-Type': 'application/json' }
         data = '{}'
@@ -76,11 +133,11 @@ class CardReader:
         return None
 
     def update_columns(self, item):
-        url = self.config.api_base_url + '/sharepoint:' + self.config.list_relative_path + ':/items/' + item.id + '/columnSet'
+        url = self.config.api_base_url + '/sharepoint:' + self.config.entry_log_path + ':/items/' + item.id + '/columnSet'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token,
                     'Content-Type': 'application/json' }
         try:
-            r = requests.patch(url, json=item.column_set, headers=headers, verify=config.verify_ssl)
+            r = requests.patch(url, json=item.column_set, headers=headers, verify=self.config.verify_ssl)
             r.raise_for_status()
             return Models.ListItem(r.json())
         except requests.HTTPError as err:
@@ -97,6 +154,9 @@ class CardReader:
     def main(self):
         self.reader = RFIDReader.RfidCardReader()
         self.reader.open_input_device()
+
+        print 'Initializing...'
+        self.refresh_card_list()
 
         print 'Card reader initialized. Waiting for card.'
 
