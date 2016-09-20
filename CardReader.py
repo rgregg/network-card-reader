@@ -107,7 +107,7 @@ class CardReader(object):
         if item:
             item.column_set = {
                 'Entry_x0020_Time': datetime.datetime.utcnow().isoformat(),
-                'Title': 'Scanned at Reader 01'
+                'Title': 'Scanned at Reader 01 - %s' % card_number
             }
             # 'Card_x0020_SerialId': card_id,
             self.update_columns(item)
@@ -167,7 +167,7 @@ class CardReader(object):
                 self.record_card_scan(card_number)
             else:
                 print('No card number detected. Aborting.')
-                run = False
+                self.run = False
 
 
 def end_read(sig, frame):

@@ -40,7 +40,7 @@ class RfidCardReader(object):
     }
     
     def __init__(self, name=None):
-        self.device_name = name if name is None else 'Sycreader USB Reader'
+        self.device_name = 'Sycreader USB Reader' if name is None else name
         self.device = self._get_device()
 
     def _get_device(self):
