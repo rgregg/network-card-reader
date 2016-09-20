@@ -29,12 +29,12 @@ class AccessToken(object):
         self.access_token = ''
         self.expires = datetime.datetime.utcnow()
 
-    @staticmethod
-    def expired(cls):
-        if not cls.access_token:
+   
+    def expired(self):
+        if not self.access_token:
             return True
         safe_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
-        if safe_date > cls.expires:
+        if safe_date > self.expires:
             return True
         return False
     

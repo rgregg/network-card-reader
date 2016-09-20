@@ -53,7 +53,7 @@ class RfidCardReader(object):
             if device.name == self.device_name:
                 return device
 
-        print 'Unable to locate named device %s' % self.device_name
+        print('Unable to locate named device %s' % self.device_name)
         return None        
 
     def open_input_device(self):
@@ -61,14 +61,14 @@ class RfidCardReader(object):
             return
 
         if not self.device:
-            print 'Device not found'
+            print('Device not found')
             sys.exit(1)
 
         try:
             input_device = evdev.InputDevice(self.device.fn)
             input_device.grab()
         except:
-            print 'Unable to grab input device'
+            print('Unable to grab input device')
             sys.exit(1)
 
         self.input_device = input_device

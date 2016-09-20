@@ -176,7 +176,7 @@ def end_read(sig, frame):
         if CardReaderSingleton.card_reader is not None:
             CardReaderSingleton.card_reader.cancel()
 
-class CardReaderSingleton(object)
+class CardReaderSingleton(object):
     card_reader = None
     
     @staticmethod
