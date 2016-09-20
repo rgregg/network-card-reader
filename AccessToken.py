@@ -62,4 +62,4 @@ class AccessToken(object):
                 return False
             else:
                 print('New access token: %s' % self.access_token)
-        return True        
+        return True
