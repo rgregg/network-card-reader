@@ -23,43 +23,43 @@ import datetime
 import requests
 import AppConfig
 
-class AccessToken:
+class AccessToken(object):
     
     def __init__(self):
-        self.access_token = ""
+        self.access_token = ''
         self.expires = datetime.datetime.utcnow()
 
-    def expired(cls):
-        if not cls.access_token:
+   
+    def expired(self):
+        if not self.access_token:
             return True
         safe_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
-        if safe_date > cls.expires:
+        if safe_date > self.expires:
             return True
         return False
     
     def get_access_token(self, config):
-        r = requests.post(config.auth_authority_url + "/oauth2/token", data = {
-            "resource": config.resource_url,
-            "client_id": config.client_id,
-            "grant_type": "password",
-            "username": config.username,
-            "password": config.password,
-            "scope": "openid"
+        r = requests.post(config.auth_authority_url + '/oauth2/token', data = {
+                'resource': config.resource_url,
+                'client_id': config.client_id,
+                'grant_type': 'password',
+                'username': config.username,
+                'password': config.password,
+                'scope': 'openid'
             },
             verify = config.verify_ssl)
         r.raise_for_status()
         
-        json = r.json()
-        self.access_token = json["access_token"]
-        self.expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=int(json["expires_in"]))
+        self.access_token = r.json()['access_token']
+        self.expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=int(r.json()['expires_in']))
 
     def refresh_token(self, config):
         if self.expired():
-            print "Refreshing access_token..."
+            print('Refreshing access_token...')
             self.get_access_token(config)
             if self.expired():
-                print "Unable to generate a new access token. Scan cancelled."
+                print('Unable to generate a new access token. Scan cancelled.')
                 return False
             else:
-                print "New access token: %s" % self.access_token
-        return True        
+                print('New access token: %s' % self.access_token)
+        return True

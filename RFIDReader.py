@@ -27,7 +27,7 @@ try:
 except ImportError:
     USE_EVDEV = False
 
-class RfidCardReader:
+class RfidCardReader(object):
     KEY_ENTER = 'KEY_ENTER'
     SCANCODES = {
         # Scancode: ASCIICode
@@ -39,10 +39,11 @@ class RfidCardReader:
         50: u'M', 51: u',', 52: u'.', 53: u'/', 54: u'RSHFT', 56: u'LALT', 100: u'RALT'
     }
     
-    def __init__(self):
-        self.device_name = 'Sycreader USB Reader'
+    def __init__(self, name=None):
+        self.device_name = 'Sycreader USB Reader' if name is None else name
+        self.device = self._get_device()
 
-    def get_device(self):
+    def _get_device(self):
         if not USE_EVDEV:
             return
 
@@ -52,23 +53,22 @@ class RfidCardReader:
             if device.name == self.device_name:
                 return device
 
-        print 'Unable to locate named device %s' % self.device_name
+        print('Unable to locate named device %s' % self.device_name)
         return None        
 
     def open_input_device(self):
         if not USE_EVDEV:
             return
 
-        device = self.get_device()
-        if not device:
-            print 'Device not found'
+        if not self.device:
+            print('Device not found')
             sys.exit(1)
 
         try:
-            input_device = evdev.InputDevice(device.fn)
+            input_device = evdev.InputDevice(self.device.fn)
             input_device.grab()
         except:
-            print 'Unable to grab input device'
+            print('Unable to grab input device')
             sys.exit(1)
 
         self.input_device = input_device
@@ -79,9 +79,8 @@ class RfidCardReader:
             self.input_device = None
 
     def read_input(self):
-        if not USE_EVDEV:
-            return '1234'
-            #return raw_input('Missing evdev, enter card number directly: ')
+        if not USE_EVDEV or self.input_device is None:
+            return None
             
         rfid = ''
         for event in self.input_device.read_loop():
@@ -90,5 +89,4 @@ class RfidCardReader:
                 if data.keycode == RfidCardReader.KEY_ENTER:
                     break
                 rfid += RfidCardReader.SCANCODES[data.scancode]
-        return rfid   
-    
+        return rfid
