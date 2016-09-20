@@ -16,6 +16,7 @@ Depending on your python configuration, you may need to install additional modul
 The following wheels/eggs must be installed:
 
 * requests
+* evdev (if using a card scanner instead of manual entry)
 
 To install these, use `pip install <wheel_name>`.
 
