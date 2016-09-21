@@ -60,6 +60,4 @@ class AccessToken(object):
             if self.expired():
                 print('Unable to generate a new access token. Scan cancelled.')
                 return False
-            else:
-                print('New access token: %s' % self.access_token)
         return True

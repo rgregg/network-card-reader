@@ -48,8 +48,8 @@ class CardReader(object):
         except Exception as err:
             print('Unable to refresh access token. %s' % err.message)
         
-        # /sharepoint:/path:/items?$select=id&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)
-        url = self.config.api_base_url + '/sharepoint:' + self.config.access_cards_path + ':/items?$select=id&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)'
+        # /sharepoint:/path:/items?$select=id,listItemId&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)
+        url = self.config.api_base_url + '/sharepoint:' + self.config.access_cards_path + ':/items?$select=id,listItemId&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token }
 
         try:
@@ -72,13 +72,13 @@ class CardReader(object):
                 if 'columnSet' not in item:
                     continue
                 column_set = item['columnSet']
-                employee_id = column_set['EmployeeId']
+                item_id = item['listItemId']
                 card_serial = None
                 if 'Card_x0020_Serial' in column_set:
                     card_serial = column_set['Card_x0020_Serial']
                 elif 'Card_x005f_x0020_x005f_Serial' in column_set:
                     card_serial = column_set['Card_x005f_x0020_x005f_Serial']
-                output[card_serial] = employee_id
+                output[card_serial] = item_id
             except Excetion as err:
                 print('Unable to parse response item: %s' % err.message)
         
@@ -107,7 +107,8 @@ class CardReader(object):
         if item:
             item.column_set = {
                 'Entry_x0020_Time': datetime.datetime.utcnow().isoformat(),
-                'Title': 'Scanned at Reader 01 - %s' % card_number
+                'Title': 'Scanned at Reader 01 - %s' % card_number,
+                'Card_x0020_SerialId': card_id
             }
             # 'Card_x0020_SerialId': card_id,
             self.update_columns(item)
