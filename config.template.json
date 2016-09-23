@@ -4,8 +4,7 @@
 "redirectUrl": "",
 "apiBaseUrl": "https://graph.microsoft.com/beta",
 "resourceUri": "https://graph.microsoft.com",
-"entryLogPath": "/sites/facilities/lists/entry%20log",
-"accessCardsPath": "/sites/facilities/lists/access%20cards",
+"siteRelativePath": "/sites/facilities",
 "username": "",
 "password": "",
 "verifySSL": true

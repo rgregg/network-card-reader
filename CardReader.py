@@ -35,6 +35,10 @@ class CardReader(object):
         self.last_token = AccessToken.AccessToken()
         self.config = AppConfig.AppConfig.read_from_file()
         self.card_serials = {}
+        self.site_id = None
+        self.list_ids = {}
+        self.cardListName = "Access Cards"
+        self.entryLogName = "Entry Log"
 
         # Allow overriding the access_token for debugging purposes
         if self.config.access_token:
@@ -48,8 +52,9 @@ class CardReader(object):
         except Exception as err:
             print('Unable to refresh access token. %s' % err.message)
         
-        # /sharepoint:/path:/items?$select=id,listItemId&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)
-        url = self.config.api_base_url + '/sharepoint:' + self.config.access_cards_path + ':/items?$select=id,listItemId&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)'
+        # /sharePoint:/sites/facilities/lists/access%20cards:/items?$select=id,listItemId&$expand=columnSet($select=EmployeeId,Card_x0020_Serial)
+        # /sharePoint/sites/{site-id}/lists/{list-id}/items
+        url = self.config.api_base_url + '/sharePoint/sites/' + self.site_id + '/lists/' + self.list_ids['Access Cards'] + '/items?$select=id,listItemId&$expand=columnSet'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token }
 
         try:
@@ -116,11 +121,15 @@ class CardReader(object):
             print('Unable to create a new item in the list.')
 
     def create_list_item(self):
-        url = self.config.api_base_url + '/sharepoint:' + self.config.entry_log_path + ':/items'
+
+        # /sharePoint:/sites/facilities/lists/entry%20log:/items
+        # /sharePoint/sites/{site-id}/lists/{list-id}/items
+        url = self.config.api_base_url + '/sharepoint/sites/' + self.site_id + '/lists/' + self.list_ids['Entry Log'] + '/items'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token,
                     'Content-Type': 'application/json' }
         data = '{}'
         
+        # Currently the API only allows creating empty items. This will be fixed in the future.
         try:
             r = requests.post(url, data=data, headers=headers, verify=self.config.verify_ssl)
             r.raise_for_status()
@@ -132,7 +141,9 @@ class CardReader(object):
         return None
 
     def update_columns(self, item):
-        url = self.config.api_base_url + '/sharepoint:' + self.config.entry_log_path + ':/items/' + item.id + '/columnSet'
+        # /sharePoint:/sites/facilities/lists/entry%20log:/items/{item-id}/columnSet
+        # /sharePoint/sites/{site-id}/lists/{list-id}/items/{item-id}/columnSet
+        url = self.config.api_base_url + '/sharePoint/sites/' + self.site_id + '/lists/' + self.list_ids['Entry Log'] + '/items/' + item.id + '/columnSet'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token,
                     'Content-Type': 'application/json' }
         try:
@@ -155,11 +166,14 @@ class CardReader(object):
         self.reader.open_input_device()
 
         print('Initializing...')
+        self.resolve_list_ids()
         self.refresh_card_list()
 
-        print('Card reader initialized. Waiting for card.')
+        print('Card reader initialized.')
 
         while self.run:
+            print('Waiting for card to scan.')
+
             # Try to read the card, if present
             card_number = self.reader.read_input()
 
@@ -169,6 +183,61 @@ class CardReader(object):
             else:
                 print('No card number detected. Aborting.')
                 self.run = False
+    
+    def resolve_site_id(self):
+        # This method is only necessary because of a bug in Graph /beta/ where the relative URL syntax doesn't
+        # allow additional navigation beyond the end of the path. This will be fixed in the future and the  
+        # API calls below can just use the relative URL instead of the IDs
+        try:
+            self.last_token.refresh_token(self.config)
+        except Exception as err:
+            print('Unable to refresh access token. %s' % err.message)
+
+        url = self.config.api_base_url + '/sharePoint:' + self.config.site_relative_path
+        headers = { 'Authorization': 'Bearer ' + self.last_token.access_token }
+        
+        try:
+            r = requests.get(url, headers=headers, verify=self.config.verify_ssl)
+            r.raise_for_status()
+            return r.json()['id']
+        except Exception as err:
+            print('Error occured while getting site: %s' % err.message)
+        return None
+    
+    def resolve_list_ids(self):
+        # This method is only necessary because of a bug in Graph /beta/ where the relative URL syntax doesn't
+        # allow additional navigation beyond the end of the path. This will be fixed in the future and the  
+        # API calls below can just use the relative URL instead of the IDs
+
+        try:
+            self.last_token.refresh_token(self.config)
+        except Exception as err:
+            print('Unable to refresh access token. %s' % err.message)
+
+        site_id = self.resolve_site_id()
+        if not site_id:
+            print('Unable to find site ID for relative URL')
+            return None
+        
+        self.site_id = site_id
+
+        url = self.config.api_base_url + '/sharePoint/sites/' + site_id + '/lists?$filter=name eq \'Access Cards\' or name eq \'Entry Log\''
+        headers = { 'Authorization': 'Bearer ' + self.last_token.access_token }
+        
+        try:
+            r = requests.get(url, headers=headers, verify=self.config.verify_ssl)
+            r.raise_for_status()
+            
+            lists = r.json()['value']
+            for list in lists:
+                name = list['name']
+                id = list['id']
+                self.list_ids[name] = id 
+            
+        except Exception as err:
+            print('Error occured while getting site: %s' % err.message)
+        return None
+
 
 
 def end_read(sig, frame):

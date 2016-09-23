@@ -56,18 +56,11 @@ class AppConfig:
             return None
     
     @property
-    def entry_log_path(self):
-        if 'entryLogPath' in self._prop_dict:
-            return self._prop_dict['entryLogPath']
+    def site_relative_path(self):
+        if 'siteRelativePath' in self._prop_dict:
+            return self._prop_dict['siteRelativePath']
         else:
             return None
-    
-    @property
-    def access_cards_path(self):
-        if 'accessCardsPath' in self._prop_dict:
-            return self._prop_dict['accessCardsPath']
-        else:
-            return None            
     
     @property
     def username(self):
