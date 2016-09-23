@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Starting CardReader.py"
+python3 CardReader.py
