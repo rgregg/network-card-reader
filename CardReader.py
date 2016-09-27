@@ -111,7 +111,7 @@ class CardReader(object):
         item = self.create_list_item()
         if item:
             item.column_set = {
-                'Entry_x0020_Time': datetime.datetime.utcnow().isoformat(),
+                'Entry_x0020_Time': datetime.datetime.utcnow().isoformat() + 'Z',
                 'Title': 'Scanned at Reader 01 - %s' % card_number,
                 'Card_x0020_SerialId': card_id
             }
@@ -124,11 +124,14 @@ class CardReader(object):
 
         # /sharePoint:/sites/facilities/lists/entry%20log:/items
         # /sharePoint/sites/{site-id}/lists/{list-id}/items
+        
         url = self.config.api_base_url + '/sharepoint/sites/' + self.site_id + '/lists/' + self.list_ids['Entry Log'] + '/items'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token,
                     'Content-Type': 'application/json' }
         data = '{}'
         
+        print("POST ", url)
+
         # Currently the API only allows creating empty items. This will be fixed in the future.
         try:
             r = requests.post(url, data=data, headers=headers, verify=self.config.verify_ssl)
@@ -146,6 +149,10 @@ class CardReader(object):
         url = self.config.api_base_url + '/sharePoint/sites/' + self.site_id + '/lists/' + self.list_ids['Entry Log'] + '/items/' + item.id + '/columnSet'
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token,
                     'Content-Type': 'application/json' }
+
+        print('PATCH ', url)
+        print(item.column_set)
+
         try:
             r = requests.patch(url, json=item.column_set, headers=headers, verify=self.config.verify_ssl)
             r.raise_for_status()
@@ -195,13 +202,14 @@ class CardReader(object):
 
         url = self.config.api_base_url + '/sharePoint:' + self.config.site_relative_path
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token }
-        
+        print('GET', url)
         try:
             r = requests.get(url, headers=headers, verify=self.config.verify_ssl)
             r.raise_for_status()
+            print('Site ID: %s' % r.json()['id'])
             return r.json()['id']
         except Exception as err:
-            print('Error occured while getting site: %s' % err.message)
+            print('Error occured while getting site: %s' % err)
         return None
     
     def resolve_list_ids(self):
@@ -225,6 +233,7 @@ class CardReader(object):
         headers = { 'Authorization': 'Bearer ' + self.last_token.access_token }
         
         try:
+            print('Request: GET %s' % url)
             r = requests.get(url, headers=headers, verify=self.config.verify_ssl)
             r.raise_for_status()
             
@@ -233,7 +242,9 @@ class CardReader(object):
                 name = list['name']
                 id = list['id']
                 self.list_ids[name] = id 
-            
+                print('Found list: ', name, ' == ', id)
+        except HTTPError as err:
+            print('Unsuccessful HTTP response: %s' % err.message)
         except Exception as err:
             print('Error occured while getting site: %s' % err.message)
         return None

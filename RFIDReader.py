@@ -45,11 +45,13 @@ class RfidCardReader(object):
 
     def _get_device(self):
         if not USE_EVDEV:
+            print('EVDEV not detected. Using manual input mode.')
             return
 
         devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
         target_device = None
         for device in devices:
+            print('Detected device: %s' % device.name)
             if device.name == self.device_name:
                 return device
 
@@ -58,6 +60,7 @@ class RfidCardReader(object):
 
     def open_input_device(self):
         if not USE_EVDEV:
+            print('Using manual input mode. EVDEV not detected')
             return
 
         if not self.device:
@@ -79,7 +82,9 @@ class RfidCardReader(object):
             self.input_device = None
 
     def read_input(self):
-        if not USE_EVDEV or self.input_device is None:
+        if not USE_EVDEV:
+            return input('Type a card number: ')
+        elif self.input_device is None:
             return None
             
         rfid = ''
