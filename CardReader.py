@@ -39,48 +39,30 @@ class CardReader(object):
         self.list_ids = {}
 
     def refresh_card_list(self):
-        # graph.microsoft.com/beta/sharePoint/sites/{site-id}/lists/{list-id}/items?$select=id,listItemId&$expand=columnSet
-        response_data = self.graph_request('GET', '/sharePoint/sites/' + self.site_id + '/lists/' + self.list_ids['Access Cards'] + '/items?$select=id,listItemId&$expand=columnSet')
-        self.card_serials = {}
-        for item in response_data['value']:
-            column_set = item['columnSet']
-            item_id = item['listItemId']
-            card_serial_number = column_set['Card_x0020_Serial']
-            self.card_serials[card_serial_number] = item_id
+        # graph.microsoft.com/beta/sharePoint/sites/{site_id}/lists/{list_ids['Access Cards']}/items?$select=id,listItemId&$expand=columnSet
 
     def create_list_item(self):
         # Currently the API only allows creating empty items. This will be fixed in the future.
         # POST graph.microsoft.com/beta/sharePoint/sites/{site-id}/lists/{list-id}/items
-        response_data = self.graph_request(
-            'POST', 
-            '/sharePoint/sites/' + self.site_id + '/lists/' + self.list_ids['Entry Log'] + '/items',
-            '{}')
-        return Models.ListItem(response_data)
+        
+        return Models.ListItem()
 
     def patch_columns(self, item):
         # PATCH graph.microsoft.com/beta/sharePoint/sites/{site-id}/lists/{list-id}/items/{item-id}/columnSet
-        response_data = self.graph_request(
-            'PATCH',
-            '/sharePoint/sites/' + self.site_id + '/lists/' + self.list_ids['Entry Log'] + '/items/' + item.id + '/columnSet',
-            json.dumps(item.column_set))
-        return Models.ListItem(response_data)
+        return Models.ListItem()
 
     def record_card_scan(self, card_number):
-        # Look up the CardSerialId value from the list of valid cards
-        card_id = self.card_serials[card_number]
+        # Look up the card_number value from card_serials to get the card_id
 
-        # add a new listitem to the list
-        item = self.create_list_item()
+        # create a new listItem
 
-        # update the list item with our values
-        item.column_set = {
-            'Entry_x0020_Time': datetime.datetime.utcnow().isoformat() + 'Z',
-            'Title': 'Scanned at Reader 01 - %s' % card_number,
-            'Card_x0020_SerialId': card_id
-        }
+        # set column_set values for our columns
         
-        # Patch the list item with our new values
-        self.patch_columns(item)
+        # Patch the list item with our new values so we record the entry
+
+
+
+
 
 
 
